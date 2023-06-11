@@ -3,40 +3,33 @@ require 'rspec'
 require 'selenium-webdriver'
 
 RSpec.describe Parser do
+  include Capybara::DSL
+
   before(:all) do
     @parser = Parser.new
   end
 
-  after(:all) do
-    if File.exist?("names.csv")
-      File.delete("names.csv")
+  it 'should return true if login is successful' do
+    expect(@parser.logged_in?).to eq(true)
+  end
+
+  it 'should return false if login is not successful' do
+    expect(@parser.logged_in?("wrong_login", "wrong_password")).to eq(false)
+  end
+
+  it 'should raise an error if login is not successful' do
+    expect { @parser.get_names(false) }.to raise_error('Login failed')
+  end
+
+  it 'should return array of strings' do
+    array = @parser.get_names(@parser.logged_in?)
+    array.each do |element|
+      expect(element).to be_a(String)
     end
   end
 
-  it 'should return multidimensional array of strings' do
-    expect(@parser.get_names).to be_a(Array)
-    @parser.get_names.each do |subarray|
-      expect(subarray).to be_a(Array)
-      subarray.each do |element|
-        expect(element).to be_a(String)
-      end
-    end
-  end
-
-  it 'should save the names to csv file' do
-    expect(File.exist?("names.csv")).to be true
-  end
-
-  it 'should save correct number of records to csv' do
-    csv_file = CSV.read("names.csv")
-    expect(csv_file.length - 1).to eq(@parser.get_names.length)
-  end
-
-  it 'should save all records to csv' do
-    names = @parser.get_names
-    @parser.write_to_csv
-    csv_file = CSV.read('names.csv')
-    expect(names[0]).to eq(csv_file[1])
-    expect(names[-1]).to eq(csv_file[-1])
+  it "should return the required number of names" do
+    array = @parser.get_names(@parser.logged_in?)
+    expect(array.length).to be == Parser::NAMES_TO_GET
   end
 end
